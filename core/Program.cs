@@ -1,3 +1,3 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-Console.WriteLine("Hello, World!");
+﻿byte[] byteArray = [0xAA, 0xBB, 0xCC, 0xDD];
+int[] intArray = UnsafeTools.ByteToInt(byteArray);
+Console.WriteLine(intArray);
