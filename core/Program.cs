@@ -1,10 +1,11 @@
-﻿var source = typeof(OriginClass).GetMethod("Method");
-var destination = typeof(HijackedClass).GetMethod("Method");
-    
-var hijacker = new MethodHijacker();
-var memoryChange = hijacker.HijackMethod(source, destination);
+﻿using HarmonyLib;
 
-HijackedClass.MemoryChange = memoryChange;
+var harmony = new Harmony("com.example.patch");
+var source = AccessTools.Method(typeof(OriginClass), "Method");
+var destination = SymbolExtensions.GetMethodInfo(() => HijackedClass.Method());
+
+harmony.Patch(source, new HarmonyMethod(destination));
+
 var originClass = new OriginClass();
 originClass.Method();
 
@@ -15,12 +16,9 @@ sealed class OriginClass
 
 sealed class HijackedClass
 {
-    public static UnsafeMemoryChange MemoryChange;
-    public static void Method(OriginClass origin)
+    public static bool Method()
     {
-        MemoryChange.Undo();
-        origin.Method();
-        MemoryChange.Apply();
         Console.WriteLine("Hijacked Method");
+        return false;
     }
 }

@@ -9,6 +9,15 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <Optimize>false</Optimize>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <Prefer32bit>true</Prefer32bit>
+      <DebugSymbols>false</DebugSymbols>
+    </PropertyGroup>
+
     <ItemGroup>
       <PackageReference Include="Lib.Harmony" Version="2.3.3" />
     </ItemGroup>
