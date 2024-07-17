@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-
 public static class UnsafeTools
 {
     static unsafe IntPtr AddressOf(object o)
