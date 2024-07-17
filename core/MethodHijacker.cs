@@ -2,9 +2,9 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-public class MethodHijacker : IMethodHijacker
+public unsafe class MethodHijacker : IMethodHijacker
 {
-    public unsafe void HijackMethod(MethodInfo source, MethodInfo destination)
+    public UnsafeMemoryChange HijackMethod(MethodInfo source, MethodInfo destination)
     {
         RuntimeHelpers.PrepareMethod(source.MethodHandle);
         RuntimeHelpers.PrepareMethod(destination.MethodHandle);
@@ -15,20 +15,46 @@ public class MethodHijacker : IMethodHijacker
         var sourcePointer = (byte*)sourceFp.ToPointer();
         var destinationPointer = (byte*)destinationFp.ToPointer();
 
-        VirtualProtect(sourcePointer, 8, 0x40, out var oldProtect);
-        
         var jump = (uint)destinationPointer - (uint)sourcePointer - 5;
-        *sourcePointer = 0xE9;
-        *(uint*)(sourcePointer + 1) = jump;
+        return new UnsafeMemoryChange((uint*)sourcePointer, 0xE9 | (jump << 8));
+    }
 
-        VirtualProtect(sourcePointer, 8, oldProtect, out oldProtect);
+   
+}
+
+public unsafe class UnsafeMemoryChange
+{
+    private readonly uint* pointer;
+    private readonly uint data;
+    private readonly uint originalData;
+
+    public UnsafeMemoryChange(uint* pointer, uint data)
+    {
+        this.pointer = pointer;
+        this.data = data;
+        originalData = *pointer;
+        Apply();
+    }
+
+    public void Apply()
+    {
+        VirtualProtect((byte*)pointer, 8, 0x40, out var oldProtect);
+        *pointer = data;
+        VirtualProtect((byte*)pointer,8, oldProtect, out oldProtect);
+    }
+
+    public void Undo()
+    {
+        VirtualProtect((byte*)pointer, 8, 0x40, out var oldProtect);
+        *pointer = originalData;
+        VirtualProtect((byte*)pointer, 8, oldProtect, out oldProtect);
     }
 
     [DllImport("kernel32")]
-    static extern unsafe bool VirtualProtect(byte* lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
+    static extern bool VirtualProtect(byte* lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
 }
 
 public interface IMethodHijacker
 {
-    void HijackMethod(MethodInfo source, MethodInfo destination);
+    UnsafeMemoryChange HijackMethod(MethodInfo source, MethodInfo destination);
 }

@@ -2,8 +2,9 @@
 var destination = typeof(HijackedClass).GetMethod("Method");
     
 var hijacker = new MethodHijacker();
-hijacker.HijackMethod(source, destination);
+var memoryChange = hijacker.HijackMethod(source, destination);
 
+HijackedClass.MemoryChange = memoryChange;
 var originClass = new OriginClass();
 originClass.Method();
 
@@ -14,5 +15,12 @@ sealed class OriginClass
 
 sealed class HijackedClass
 {
-    public void Method() => Console.WriteLine("Hijacked Method");
+    public static UnsafeMemoryChange MemoryChange;
+    public static void Method(OriginClass origin)
+    {
+        MemoryChange.Undo();
+        origin.Method();
+        MemoryChange.Apply();
+        Console.WriteLine("Hijacked Method");
+    }
 }
